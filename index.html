@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Webpage</title>
+
+    <script src = "https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        #box{
+            width: 200px;
+            height: 100px;
+            background-color: lightblue;
+            margin: 20px auto;
+            padding: 20px;
+            font-size: 18px;
+            opacity: 1;
+        }
+
+        button{
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Dynamic Webpage using JS DOM & JQuery</h2>
+
+    <div id = "box">Hello</div>
+    
+    <button onclick = "ChangeText()">Change Text</button>
+    <button id = "hidebtn">Hide</button>
+    <button id = "showbtn">Show</button>
+    <button id = "togglebtn">Toggle</button>
+    <button id = "animatebtn">Animate</button>
+
+    <script>
+        function ChangeText() {
+            document.getElementById("box").innerHTML = "Text Changed Using JavaScript DOM!";
+        }
+
+        let animated = false;
+
+        $(document).ready(function() {
+            $("#hidebtn").click(function () {
+                $("#box").stop(true, true).hide(500);
+            });
+
+            $("#showbtn").click(function() {
+                $("#box").stop(true, true).show(500);
+            });
+
+            $("#togglebtn").click(function () {
+                $("#box").stop(true, true).toggle(500);
+            });
+
+            $("#animatebtn").click(function() {
+                $("#box").stop(true, true);
+
+                if(!animated) {
+                    $("#box").animate({
+                        width:"300px",
+                        height: "150px",
+                        opacity: 0.6
+                    }, 800);
+                    animated = true;
+                }
+                else {
+                    $("#box").animate({
+                        width: "200px",
+                        height: "100px",
+                        opacity: 1
+                    }, 800);
+                    animated = false;
+                }
+            })
+        });
+    </script>
+</body>
+</html>
