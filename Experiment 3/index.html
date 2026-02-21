@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOM Task Experiment</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            padding-top: 50px;
+            background-color: #f4f4f9;
+        }
+        .todo-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 350px;
+        }
+        .input-group {
+            display: flex;
+            gap: 5px;
+        }
+        input#taskInput {
+            padding: 8px;
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button#addBtn {
+            padding: 8px 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .task-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        .task-text {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .completed .task-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .complete-checkbox {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="todo-container">
+    <h2>Task Lab</h2>
+    <div class="input-group">
+        <input type="text" id="taskInput" placeholder="Add a new experiment...">
+        <button id="addBtn">Add</button>
+    </div>
+    <ul id="taskList"></ul>
+</div>
+
+<script>
+    const input = document.getElementById('taskInput');
+    const addBtn = document.getElementById('addBtn');
+    const taskList = document.getElementById('taskList');
+
+    function addTask() {
+        const text = input.value.trim();
+        if (text === "") return;
+
+        const li = document.createElement('li');
+        
+        li.innerHTML = `
+            <div class="task-left">
+                <input type="checkbox" class="complete-checkbox">
+                <span class="task-text">${text}</span>
+            </div>
+            <button class="delete-btn">Remove</button>
+        `;
+
+        const checkbox = li.querySelector('.complete-checkbox');
+        const textSpan = li.querySelector('.task-text');
+        const deleteBtn = li.querySelector('.delete-btn');
+
+        checkbox.addEventListener('change', () => {
+            li.classList.toggle('completed', checkbox.checked);
+        });
+
+        textSpan.addEventListener('click', () => {
+            checkbox.checked = !checkbox.checked;
+            li.classList.toggle('completed', checkbox.checked);
+        });
+
+        deleteBtn.addEventListener('click', () => {
+            li.remove();
+        });
+
+        taskList.appendChild(li);
+        input.value = "";
+        input.focus();
+    }
+
+    addBtn.addEventListener('click', addTask);
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addTask();
+    });
+</script>
+
+</body>
+</html>
