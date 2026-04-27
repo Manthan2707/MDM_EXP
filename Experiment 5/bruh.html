@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Webpage Translator</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #eef;
+            text-align: center;
+        }
+
+        .container {
+            background-color: white;
+            width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            box-shadow: 0px 0px 10px gray;
+        }
+
+        select {
+            width: 200px;
+            padding: 5px;
+            margin: 10px;
+        }
+
+        #content {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h2>Language Translator</h2>
+
+        <select id="country" onchange="loadStates()">
+            <option value="">Select Country</option>
+            <option value="india">India</option>
+            <option value="usa">USA</option>
+        </select>
+
+        <br>
+
+        <select id="state" onchange="loadLanguages()">
+            <option>Select State</option>
+        </select>
+
+        <br>
+
+        <select id="language" onchange="translateText()">
+            <option>Select Language</option>
+        </select>
+
+        <div id="content">
+            Welcome to our website
+        </div>
+
+    </div>
+
+    <script>
+
+        // Data
+        var data = {
+
+            india: {
+                maharashtra: ["English", "Marathi", "Hindi"],
+                gujarat: ["English", "Gujarati", "Hindi"]
+            },
+
+            usa: {
+                california: ["English", "Spanish"],
+                texas: ["English", "Spanish"]
+            }
+
+        };
+
+        // Load States
+        function loadStates() {
+            var country = document.getElementById("country").value;
+            var state = document.getElementById("state");
+
+            state.innerHTML = "";
+
+            for (var s in data[country]) {
+                state.innerHTML += "<option value='" + s + "'>" + s + "</option>";
+            }
+        }
+
+        // Load Languages
+        function loadLanguages() {
+            var country = document.getElementById("country").value;
+            var state = document.getElementById("state").value;
+            var language = document.getElementById("language");
+
+            language.innerHTML = "";
+
+            var langs = data[country][state];
+
+            for (var i = 0; i < langs.length; i++) {
+                language.innerHTML += "<option>" + langs[i] + "</option>";
+            }
+        }
+
+        // Translate Text
+        function translateText() {
+            var lang = document.getElementById("language").value;
+            var content = document.getElementById("content");
+
+            if (lang == "Marathi")
+                content.innerHTML = "आमच्या वेबसाइटवर स्वागत आहे";
+
+            else if (lang == "Hindi")
+                content.innerHTML = "हमारी वेबसाइट पर आपका स्वागत है";
+
+            else if (lang == "Gujarati")
+                content.innerHTML = "અમારી વેબસાઇટ પર આપનું સ્વાગત છે";
+
+            else if (lang == "Spanish")
+                content.innerHTML = "Bienvenido a nuestro sitio web";
+
+            else
+                content.innerHTML = "Welcome to our website";
+        }
+
+    </script>
+
+</body>
+
+</html>

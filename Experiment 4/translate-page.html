@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Global Reader</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d0d;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 520px;
+    }
+    h1 { text-align: center; color: #2979ff; font-size: 1.8rem; margin-bottom: 28px; }
+    .intro, .article-content {
+      border-left: 4px solid #2979ff;
+      padding-left: 16px;
+      margin-bottom: 30px;
+      color: #ccc;
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+    .article-content { display: none; }
+    .article-content h2 { color: #2979ff; margin-bottom: 12px; font-size: 1.05rem; }
+    .article-content p { margin-bottom: 10px; }
+    .field { margin-bottom: 20px; }
+    .field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    select {
+      width: 100%;
+      background: #111;
+      color: #fff;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      cursor: pointer;
+    }
+    select:disabled { opacity: 0.4; cursor: not-allowed; }
+    select:focus { outline: none; border-color: #2979ff; }
+    .btn {
+      width: 100%;
+      border: none;
+      border-radius: 6px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .btn-primary { background: #2979ff; color: #fff; }
+    .btn-primary:hover { background: #1a5fcc; }
+    .btn-primary:disabled { background: #1a3a7a; cursor: not-allowed; }
+    .btn-reset {
+      background: transparent;
+      color: #888;
+      border: 1px solid #333;
+      display: none;
+    }
+    .btn-reset:hover { color: #fff; border-color: #555; }
+    .status {
+      margin-top: 14px;
+      font-size: 0.85rem;
+      text-align: center;
+      min-height: 18px;
+    }
+    .status.loading { color: #2979ff; }
+    .status.error   { color: #e74c3c; }
+    .status.success { color: #2ecc71; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>Global Reader</h1>
+
+  <div class="intro" id="intro">
+    Welcome! This system is designed to provide information to every citizen in the world.
+    Once you select your country and state, we will generate a translated version of this
+    page specifically for your regional language.
+  </div>
+
+  <div class="article-content" id="article">
+    <h2 id="art-title"></h2>
+    <div id="art-body"></div>
+  </div>
+
+  <div class="field">
+    <label>1. Select Country</label>
+    <select id="sel-country">
+      <option value="">-- Choose Country --</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>2. Select State / Province</label>
+    <select id="sel-state" disabled>
+      <option value="">Select country first</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>3. Select Language</label>
+    <select id="sel-lang" disabled>
+      <option value="">Select state first</option>
+    </select>
+  </div>
+
+  <button class="btn btn-primary" id="btn-translate" disabled>Translate Now</button>
+  <button class="btn btn-reset"   id="btn-reset">↩ Reset to English</button>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+const selCountry = document.getElementById('sel-country');
+const selState   = document.getElementById('sel-state');
+const selLang    = document.getElementById('sel-lang');
+const btnTrans   = document.getElementById('btn-translate');
+const btnReset   = document.getElementById('btn-reset');
+const statusEl   = document.getElementById('status');
+const introEl    = document.getElementById('intro');
+const articleEl  = document.getElementById('article');
+
+// ── Ask Claude and get back a JSON array ──────────────────────────────────────
+async function askClaude(prompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await res.json();
+  const text = data.content?.[0]?.text || '';
+  return JSON.parse(text.replace(/```json|```/g, '').trim());
+}
+
+// ── Populate a <select> from an array ────────────────────────────────────────
+function fillSelect(sel, items, placeholder) {
+  sel.innerHTML = `<option value="">${placeholder}</option>` +
+    items.map(i => `<option value="${i}">${i}</option>`).join('');
+  sel.disabled = false;
+}
+
+function setStatus(type, msg) {
+  statusEl.className = `status ${type}`;
+  statusEl.textContent = msg;
+}
+
+// ── Load all countries on page load ──────────────────────────────────────────
+(async () => {
+  setStatus('loading', 'Loading countries...');
+  try {
+    const countries = await askClaude(
+      'List every country in the world. Return ONLY a JSON array of country name strings, sorted alphabetically. No extra text.'
+    );
+    fillSelect(selCountry, countries, '-- Choose Country --');
+    setStatus('', '');
+  } catch(e) {
+    setStatus('error', 'Failed to load countries. Refresh and try again.');
+  }
+})();
+
+// ── Country → load states ─────────────────────────────────────────────────────
+selCountry.addEventListener('change', async () => {
+  const country = selCountry.value;
+  selState.innerHTML = '<option value="">Select country first</option>';
+  selState.disabled = true;
+  selLang.innerHTML  = '<option value="">Select state first</option>';
+  selLang.disabled   = true;
+  btnTrans.disabled  = true;
+  if (!country) return;
+
+  setStatus('loading', `Loading states for ${country}...`);
+  try {
+    const states = await askClaude(
+      `List all states, provinces, or major regions of ${country}. Return ONLY a JSON array of strings, sorted alphabetically. No extra text.`
+    );
+    fillSelect(selState, states, '-- Choose State --');
+    setStatus('', '');
+  } catch(e) {
+    setStatus('error', 'Failed to load states. Try again.');
+  }
+});
+
+// ── State → load languages ────────────────────────────────────────────────────
+selState.addEventListener('change', async () => {
+  const country = selCountry.value, state = selState.value;
+  selLang.innerHTML = '<option value="">Select state first</option>';
+  selLang.disabled  = true;
+  btnTrans.disabled = true;
+  if (!state) return;
+
+  setStatus('loading', `Loading languages for ${state}...`);
+  try {
+    const langs = await askClaude(
+      `List the languages spoken in ${state}, ${country}. Return ONLY a JSON array of language name strings, most widely spoken first. No extra text.`
+    );
+    fillSelect(selLang, langs, '-- Choose Language --');
+    setStatus('', '');
+  } catch(e) {
+    setStatus('error', 'Failed to load languages. Try again.');
+  }
+});
+
+selLang.addEventListener('change', () => {
+  btnTrans.disabled = !selLang.value;
+});
+
+// ── Translate ─────────────────────────────────────────────────────────────────
+btnTrans.addEventListener('click', async () => {
+  const lang = selLang.value;
+  btnTrans.disabled = true;
+  setStatus('loading', `Translating to ${lang}...`);
+  try {
+    const result = await askClaude(
+      `Translate these 3 paragraphs into ${lang}.
+Return ONLY a JSON object: {"title":"<short title in ${lang}>","paragraphs":["<p1>","<p2>","<p3>"]}
+
+P1: Welcome! This system is designed to provide information to every citizen in the world.
+P2: Once you select your country and state, we generate a translated version specifically for your regional language.
+P3: Language connects us all. We hope this tool helps you access information in the language closest to your heart.`
+    );
+    introEl.style.display = 'none';
+    articleEl.style.display = 'block';
+    document.getElementById('art-title').textContent = result.title;
+    document.getElementById('art-body').innerHTML =
+      result.paragraphs.map(p => `<p>${p}</p>`).join('');
+    btnReset.style.display = 'block';
+    setStatus('success', `✓ Translated to ${lang}`);
+  } catch(e) {
+    setStatus('error', 'Translation failed. Please try again.');
+  } finally {
+    btnTrans.disabled = false;
+  }
+});
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+btnReset.addEventListener('click', () => {
+  introEl.style.display = 'block';
+  articleEl.style.display = 'none';
+  btnReset.style.display = 'none';
+  selCountry.value = '';
+  selState.innerHTML = '<option value="">Select country first</option>';
+  selState.disabled = true;
+  selLang.innerHTML  = '<option value="">Select state first</option>';
+  selLang.disabled   = true;
+  btnTrans.disabled  = true;
+  statusEl.textContent = '';
+  statusEl.className = 'status';
+});
+</script>
+</body>
+</html>
